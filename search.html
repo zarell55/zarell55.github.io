@@ -1,1 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>WebLizard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+</head>
+<body>
+<h1>WebLizard</h1>
+  <form id="search-form">
+    <input type="text" id="query" name="q" required />
+    <button type="submit">Search</button>
+  </form>
+
+  <div id="results"></div>
+
+  <script>
+    const API_BASE_URL = "https://weblizardbackend.onrender.com/";
+
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get("q");
+
+    const input = document.getElementById("query");
+    const resultsDiv = document.getElementById("results");
+
+    if (q) {
+      input.value = q;
+      search(q);
+    }
+
+    document.getElementById("search-form").addEventListener("submit", e => {
+      e.preventDefault();
+      const newQ = input.value.trim();
+      if (!newQ) return;
+      window.history.pushState({}, "", `?q=${encodeURIComponent(newQ)}`);
+      search(newQ);
+    });
+
+    async function search(query) {
+      resultsDiv.innerHTML = "<p>Searching…</p>";
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/search?q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+
+        if (!data.length) {
+          resultsDiv.innerHTML = "<p>No results.</p>";
+          return;
+        }
+
+        resultsDiv.innerHTML = data.map(r => `
+          <div class="result">
+            <a href="${r.url}" target="_blank" rel="noopener">
+              ${r.title || r.url}
+            </a>
+            <div class="snippet">${r.snippet || ""}</div>
+            <div class="meta">Pagerank: ${r.pagerank}</div>
+          </div>
+        `).join("");
+
+      } catch (err) {
+        resultsDiv.innerHTML = "<p>Error fetching results.</p>";
+        console.error(err);
+      }
+    }
+  </script>
+
+</body>
+</html>
 
